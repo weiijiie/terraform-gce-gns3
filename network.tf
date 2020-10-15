@@ -26,3 +26,8 @@ resource "google_compute_firewall" "openvpn" {
 
   target_tags = ["openvpn"]
 }
+
+resource "google_compute_address" "static_ip" {
+  count = var.use_static_ip ? 1 : 0
+  name  = "${var.name}-static-ip"
+}

@@ -35,7 +35,9 @@ resource "google_compute_instance" "gns3" {
 
   network_interface {
     network = var.vpc_network
-    access_config {}
+    access_config {
+      nat_ip = var.use_static_ip ? join("", google_compute_address.static_ip[*].address) : null
+    }
   }
 
   tags   = ["openvpn"]

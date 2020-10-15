@@ -33,7 +33,7 @@ function mount_pd {
     mv /tmp/gns3/* /opt/gns3
 
     chown -R gns3:gns3 /opt/gns3
-  else 
+  else
     # Already formatted, just need to mount
     mount -o discard,defaults /dev/disk/by-id/google-gns3-storage /opt/gns3
   fi

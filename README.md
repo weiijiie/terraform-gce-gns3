@@ -133,13 +133,15 @@ The base image that the Google Compute Instance is booted from is created using 
 
 To build the base images using Packer:
 
-1. Clone the repository using `git`
+1. Download Packer version 1.6 or greater from [here](https://www.packer.io/downloads)
 
-2. cd into the `packer/` directory
+2. Clone the repository using `git`
 
-3. Ensure Packer can authenticate with Google Cloud services by following the instructions [here](https://www.packer.io/docs/builders/googlecompute.html).
+3. cd into the `packer/` directory
 
-4. Run the following command to build your GNS3 server image in your project (dots separating the version numbers):
+4. Ensure Packer can authenticate with Google Cloud services by following the instructions [here](https://www.packer.io/docs/builders/googlecompute.html).
+
+5. Run the following command to build your GNS3 server image in your project (dots separating the version numbers):
 
     ```bash
     packer build -var "gcp_project_id=<GCP_PROJECT_ID>" -var "gcp_zone=<GCP_ZONE>" -var "gns3_version=v<MAJOR_NUMBER>.<MINOR_NUMBER>.<PATCH_NUMBER>" gns3.json
@@ -153,7 +155,35 @@ The costs of running the GNS3 server depends on the machine type of the Google C
 
 ### Shutting down the instance
 
-To save costs, if the instance is not required to be running 24/7, the instance can be shut down and rebooted safely. To do so, set the `enable-server` variable to be `false` in the module body and run `terraform apply`. Note that when Google Compute instances are rebooted, they may not keep the same public IP address. Hence, you will likely have to re-download the OpenVPN client profile and connect with the new profile.
+To save costs, if the instance is not required to be running 24/7, the instance can be shut down and rebooted safely. To do so, set the `enable_server` variable to be `false` in the module body and run `terraform apply`.
+
+```python
+module "gns3_server" {
+  source = "github.com/weiijiie/terraform-gce-gns3"
+
+  # ... omitted for brevity
+
+  enable_server = false
+}
+```
+
+Note that when Google Compute instances are rebooted, they may not keep the same public IP address. Hence, you will likely have to re-download the OpenVPN client profile and connect with the new profile.
+
+### Static IP
+
+To avoid the problem of having to re-download/edit the OpenVPN client profile every time the instance reboots due to IP address changes, you can set the `use_static_ip` variable to be `true` in the module body and run `terraform apply`.
+
+```python
+module "gns3_server" {
+  source = "github.com/weiijiie/terraform-gce-gns3"
+
+  # ... omitted for brevity
+
+  use_static_ip = true
+}
+```
+
+This will provision a Google Compute external IP address and attach it to your instance, allowing it to have a static public IP address. Note that your service account requires the role: `roles/compute.publicIpAdmin` to provision a static IP address.
 
 ### Persistent disk
 
@@ -163,15 +193,35 @@ The Terraform module configures the Google Compute Instance to automatically for
 
 By default, the module only allows traffic from your current public IP to the server. If you want other parties to be able to share the server, allow other IPs access to the server by setting the `allowed_ingress_cidr_blocks` Terraform variable.
 
+```python
+module "gns3_server" {
+  source = "github.com/weiijiie/terraform-gce-gns3"
+
+  # ... omitted for brevity
+
+  allowed_ingress_cidr_blocks = ["0.0.0.0/0"] # to allow all IP addresses to access the instance
+}
+```
+
 ### Protecting OpenVPN client profile endpoint
 
 By default the OpenVPN client profile endpoint is not protected, and any IP address that the firewall allows through can download the OpenVPN client profile and connect to the VPN. Due its ephemeral nature and the lack of sensitive data on the server, this may not be a huge problem. However, if necessary, the OpenVPN client profile endpoint can be configured to have basic username/password HTTP authentication. To do so, add the following to the module body and re-run `terraform apply` (note that the instance will have to be re-created).
 
-```bash
-openvpn_profile_endpoint_creds = {
+```python
+module "gns3_server" {
+  source = "github.com/weiijiie/terraform-gce-gns3"
+
+  # ... omitted for brevity
+
+  allowed_ingress_cidr_blocks = ["0.0.0.0/0"] # to allow all IP addresses to access the instance
+
+  # can be used with the above to protect the endpoint
+  openvpn_profile_endpoint_creds = {
     username = "my_username"
     password = "my_password" # change to something secure
+  }
 }
+
 ```
 
 ## Terraform Requirements
@@ -208,6 +258,7 @@ openvpn_profile_endpoint_creds = {
 | openvpn\_access\_port | Port used to access the OpenVPN access server. | `number` | `1194` | no |
 | openvpn\_profile\_endpoint\_creds | Credentials required for authentication to download the OpenVPN client profile from the server endpoint. Default uses no authentication. | <pre>object({<br>    username = string<br>    password = string<br>  })</pre> | `null` | no |
 | openvpn\_profile\_endpoint\_port | Port used to download the OpenVPN client profile. | `number` | `8003` | no |
+| use\_static\_ip | Whether to associate the Google Compute Instance with a static IP address. Will guarantee an instance with the same IP even after reboots. | `bool` | `false` | no |
 | vpc\_network | Network to launch the Google resources in. | `string` | `"default"` | no |
 
 ## Outputs

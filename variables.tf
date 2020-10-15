@@ -66,6 +66,12 @@ variable "allowed_ingress_cidr_blocks" {
   default     = []
 }
 
+variable "use_static_ip" {
+  type        = bool
+  description = "Whether to associate the Google Compute Instance with a static IP address. Will guarantee an instance with the same IP even after reboots."
+  default     = false
+}
+
 variable "openvpn_access_port" {
   type        = number
   description = "Port used to access the OpenVPN access server."
