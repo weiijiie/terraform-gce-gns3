@@ -155,6 +155,10 @@ The costs of running the GNS3 server depends on the machine type of the Google C
 
 To save costs, if the instance is not required to be running 24/7, the instance can be shut down and rebooted safely. To do so, set the `enable-server` variable to be `false` in the module body and run `terraform apply`. Note that when Google Compute instances are rebooted, they may not keep the same public IP address. Hence, you will likely have to re-download the OpenVPN client profile and connect with the new profile.
 
+### Persistent disk
+
+The Terraform module configures the Google Compute Instance to automatically format and mount the attached persistent disk to the directory where GNS3 stores its files. Thus, your GNS3 files will persist even if the instance is destroyed and recreated.
+
 ### Ingress
 
 By default, the module only allows traffic from your current public IP to the server. If you want other parties to be able to share the server, allow other IPs access to the server by setting the `allowed_ingress_cidr_blocks` Terraform variable.
