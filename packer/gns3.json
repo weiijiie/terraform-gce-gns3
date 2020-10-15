@@ -1,0 +1,42 @@
+{
+    "variables": {
+        "gns3_version": null,
+        "gcp_project_id": "{{ env `GOOGLE_PROJECT` }}",
+        "gcp_zone": "{{ env `GOOGLE_ZONE` }}",
+        "image_family": "gns3-server"
+    },
+    "builders": [
+        {
+            "type": "googlecompute",
+            "image_name": "gns3-server-ubuntu-1804-{{ timestamp | clean_resource_name }}",
+            "image_description": "An Ubuntu 18.04 LTS image setup with a GNS3 server and OpenVPN access server.",
+            "project_id": "{{ user `gcp_project_id` }}",
+            "source_image_family": "ubuntu-1804-lts",
+            "zone": "{{ user `gcp_zone` }}",
+            "disk_size": 10,
+            "image_licenses": [
+                "projects/vm-options/global/licenses/enable-vmx"
+            ],
+            "image_family": "{{ user `image_family` }}-{{ user `gns3_version` | clean_resource_name }}",
+            "ssh_username": "ubuntu"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "pause_before": "15s",
+            "script": "../scripts/install_gns3.sh",
+            "execute_command": "sudo sh -c '{{ .Vars }} {{ .Path }}'",
+            "environment_vars": [
+                "GNS3_VERSION={{ user `gns3_version` }}"
+            ]
+        }
+    ],
+    "post-processors": [
+        {
+            "type": "manifest",
+            "output": "packer-manifest.json",
+            "strip_path": true
+        }
+    ]
+}
