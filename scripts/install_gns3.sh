@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -o errexit
-set -x
 
 
 function log {
@@ -73,7 +72,6 @@ usermod -aG docker gns3
 log "IOU setup" 
 dpkg --add-architecture i386
 apt-get update
-
 apt-get install -y gns3-iou
 
 # Force hostid for IOU
@@ -86,7 +84,6 @@ log "Add gns3 to the kvm group"
 usermod -aG kvm gns3
 
 log "Setup GNS3 server"
-
 mkdir -p /etc/gns3
 cat <<EOF > /etc/gns3/gns3_server.conf
 [Server]

@@ -68,7 +68,7 @@ EOF
   
   # Generates the PKI for OpenVPN if absent
   log "Create keys if missing"
-  [[ -f ~/.rnd ]] || openssl rand -out ./.rnd -hex 256
+  [[ -f ./.rnd ]] || openssl rand -out ./.rnd -hex 256
 
   if [[ ! -f /etc/openvpn/ca.crt ]]; then
     openssl req -x509 \
