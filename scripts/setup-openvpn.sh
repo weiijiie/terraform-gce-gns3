@@ -13,14 +13,35 @@ function get_instance_metadata {
   curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/$1"
 }
 
+function mount_pd {
+  log "Format/mount persistent disk if necessary"
+
+  local pd_file="/dev/disk/by-id/google-gns3-storage"
+  local fs
+  fs="$(lsblk -no KNAME,FSTYPE "$(readlink -f ${pd_file})")"
+
+  # Disk not formatted yet
+  if [[ $(echo "${fs}" | wc -w) -eq 1 ]]; then
+    # Format the disk as a ext4 fs
+    mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard ${pd_file}
+
+    # Copy current contents of /opt/gns3
+    cp -r /opt/gns3/ /tmp/gns3
+
+    # Mount persistent disk and move files back
+    mount -o discard,defaults /dev/disk/by-id/google-gns3-storage /opt/gns3
+    mv /tmp/gns3/* /opt/gns3
+
+    chown -R gns3:gns3 /opt/gns3
+  else 
+    # Already formatted, just need to mount
+    mount -o discard,defaults /dev/disk/by-id/google-gns3-storage /opt/gns3
+  fi
+}
+
 function setup_openvpn {
   log "Running openvpn setup"
-  
-  OPENVPN_ACCESS_PORT="$(get_instance_metadata attributes/ovpn_access_port)"
-  OPENVPN_PROFILE_ENDPOINT_PORT="$(get_instance_metadata attributes/ovpn_profile_endpoint_port)"
-
-  MY_IP_ADDR="$(get_instance_metadata network-interfaces/0/access-configs/0/external-ip)"
-  log "IP detected: ${MY_IP_ADDR}"
+  log "Current IP address: ${MY_IP_ADDR}"
 
   log "Update motd"
 
@@ -47,7 +68,7 @@ EOF
   
   # Generates the PKI for OpenVPN if absent
   log "Create keys if missing"
-  [[ -f ~/.rnd ]] || openssl rand -out ~/.rnd -hex 256
+  [[ -f ~/.rnd ]] || openssl rand -out ./.rnd -hex 256
 
   if [[ ! -f /etc/openvpn/ca.crt ]]; then
     openssl req -x509 \
@@ -157,9 +178,9 @@ function setup_nginx {
 
   # Generates basic nginx config file to serve the OpenVPN client profile
   # If auth set to enabled, then also configures HTTP basic authentication
-  if [[ "$(get_instance_metadata attributes/ovpn_profile_endpoint_auth_enabled)" == true ]]; then
-    echo -n "$(get_instance_metadata attributes/ovpn_profile_endpoint_user):" >> /etc/nginx/.htpasswd
-    openssl passwd -apr1 "$(get_instance_metadata attributes/ovpn_profile_endpoint_pass)" >> /etc/nginx/.htpasswd
+  if [[  "${AUTH_ENABLED}" == "true" ]]; then
+    echo -n "${OPENVPN_PROFILE_ENDPOINT_USER}:" >> /etc/nginx/.htpasswd
+    openssl passwd -apr1 "${OPENVPN_PROFILE_ENDPOINT_PASS}" >> /etc/nginx/.htpasswd
 
     cat <<EOF > /etc/nginx/sites-available/openvpn
 server {
@@ -195,9 +216,6 @@ EOF
 function setup_gns3 {
   log "Running gns3 setup"
 
-  GNS3_SERVER_IP="$(get_instance_metadata attributes/gns3_server_ip)"
-  GNS3_SERVER_PORT="$(get_instance_metadata attributes/gns3_server_port)"
-
   # Creates/updates the GNS3 server configuration file
   cat <<EOF > /etc/gns3/gns3_server.conf
 [Server]
@@ -216,6 +234,20 @@ EOF
   sudo systemctl restart gns3
 }
 
+# Set environment from metadata server  
+OPENVPN_ACCESS_PORT="$(get_instance_metadata attributes/ovpn_access_port)"
+OPENVPN_PROFILE_ENDPOINT_PORT="$(get_instance_metadata attributes/ovpn_profile_endpoint_port)"
+MY_IP_ADDR="$(get_instance_metadata network-interfaces/0/access-configs/0/external-ip)"
+
+AUTH_ENABLED="$(get_instance_metadata attributes/ovpn_profile_endpoint_auth_enabled)"
+OPENVPN_PROFILE_ENDPOINT_USER="$(get_instance_metadata attributes/ovpn_profile_endpoint_user)"
+OPENVPN_PROFILE_ENDPOINT_PASS="$(get_instance_metadata attributes/ovpn_profile_endpoint_pass)"
+
+GNS3_SERVER_IP="$(get_instance_metadata attributes/gns3_server_ip)"
+GNS3_SERVER_PORT="$(get_instance_metadata attributes/gns3_server_port)"
+
+# Perform setup
+mount_pd
 setup_openvpn
 setup_nginx
 setup_gns3
