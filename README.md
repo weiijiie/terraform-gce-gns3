@@ -72,7 +72,7 @@ Since this module is mainly geared towards development and training purposes, it
     }
 
     module "gns3_server" {
-      source = "<PLACEHOLDER>"
+      source = "github.com/weiijiie/terraform-gce-gns3"
   
       # Selected machine type, either the E2 or N2 high-CPU machine types
       # are recommended, with 4-8 virtual CPUs based on workload requirements
