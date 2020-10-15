@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Idempotent startup script to configure the services in the GNS3 server instance
+
 set -o errexit
 
 
@@ -37,11 +39,13 @@ EOF
 
   chmod 755 /etc/update-motd.d/70-openvpn
 
+  # Creates tun device for OpenVPN if absent
   [[ -d /dev/net ]] || mkdir -p /dev/net
   [[ -c /dev/net/tun ]] || mknod /dev/net/tun c 10 200
 
   mkdir -p /etc/openvpn/
   
+  # Generates the PKI for OpenVPN if absent
   log "Create keys if missing"
   [[ -f ~/.rnd ]] || openssl rand -out ~/.rnd -hex 256
 
@@ -78,6 +82,8 @@ EOF
       -days 24855
   fi
 
+  # Creates/updates OpenVPN client/server config files
+  # Even if the keys are the same, the server's IP address may need to be updated
   log "Create client and server configuration"
   cat <<EOF > /etc/openvpn/client.ovpn
 client
@@ -132,6 +138,7 @@ EOF
 
   log "Restart OpenVPN"
 
+  # Restarts OpenVPN service
   sudo systemctl restart openvpn
   sudo systemctl enable openvpn@udp"${OPENVPN_ACCESS_PORT}"
   sudo systemctl start openvpn@udp"${OPENVPN_ACCESS_PORT}"
@@ -140,6 +147,7 @@ EOF
 function setup_nginx {
   log "Running nginx setup"
 
+  # Creates nginx directories and folders if absent
   if [[ ! -f /etc/nginx/sites-available/openvpn ]]; then
     echo "Setup HTTP server for serving client certificate"
     mkdir -p /usr/share/nginx/openvpn/profile
@@ -147,6 +155,8 @@ function setup_nginx {
     touch /usr/share/nginx/openvpn/index.html
   fi
 
+  # Generates basic nginx config file to serve the OpenVPN client profile
+  # If auth set to enabled, then also configures HTTP basic authentication
   if [[ "$(get_instance_metadata attributes/ovpn_profile_endpoint_auth_enabled)" == true ]]; then
     echo -n "$(get_instance_metadata attributes/ovpn_profile_endpoint_user):" >> /etc/nginx/.htpasswd
     openssl passwd -apr1 "$(get_instance_metadata attributes/ovpn_profile_endpoint_pass)" >> /etc/nginx/.htpasswd
@@ -176,6 +186,7 @@ EOF
     ln -s /etc/nginx/sites-available/openvpn /etc/nginx/sites-enabled/
   fi
 
+  # Copies the up-to-date OpenVPN client profile
   cp /etc/openvpn/client.ovpn /usr/share/nginx/openvpn/profile/gns3-server.ovpn
   sudo systemctl reload nginx
   log "Download http://${MY_IP_ADDR}:${OPENVPN_PROFILE_ENDPOINT_PORT}/profile/gns3-server.ovpn to setup your OpenVPN client."
@@ -187,6 +198,7 @@ function setup_gns3 {
   GNS3_SERVER_IP="$(get_instance_metadata attributes/gns3_server_ip)"
   GNS3_SERVER_PORT="$(get_instance_metadata attributes/gns3_server_port)"
 
+  # Creates/updates the GNS3 server configuration file
   cat <<EOF > /etc/gns3/gns3_server.conf
 [Server]
 host = ${GNS3_SERVER_IP}
@@ -200,6 +212,7 @@ enable_kvm = True
 require_kvm = True
 EOF
 
+  # Restarts GNS3
   sudo systemctl restart gns3
 }
 

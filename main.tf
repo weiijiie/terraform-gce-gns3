@@ -60,7 +60,7 @@ resource "google_compute_instance" "gns3" {
 }
 
 resource "google_compute_disk" "gns3" {
-  name        = "${var.name}-gns-storage-disk"
+  name        = "${var.name}-gns3-storage-disk"
   description = "Persistent disk used to store GNS3 files such as project, image and appliance files."
 
   type = "pd-standard"
