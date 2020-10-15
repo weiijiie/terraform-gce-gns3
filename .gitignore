@@ -9,4 +9,4 @@
 *.tfvars
 
 # Packer manifest file
-**/packer/manifest.json
+**/packer/packer-manifest.json
