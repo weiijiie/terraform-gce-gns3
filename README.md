@@ -111,9 +111,9 @@ Since this module is mainly geared towards development and training purposes, it
 
 5. Run `terraform apply`, inspect the generated plan, and confirm.
 
-6. Download the OpenVPN client profile from the endpoint specified in the Terraform output (may need to wait a short while for the server to be ready to accept connections), and use it to connect to the VPN via your OpenVPN client.
+6. Download the OpenVPN client profile from the endpoint specified (default port 8003) in the Terraform output. You may need to wait a short while for the server to be ready to accept connections. Use the profile to connect to the VPN via your OpenVPN client.
 
-7. Open the GNS3 client and specify the host and port under Edit > Preferences > Server, based on the IP and port specified in the Terraform output. GNS should be able to connect to the remote server.
+7. Open the GNS3 client and specify the host and port under Edit > Preferences > Server, based on the IP and port specified in the Terraform output (default IP 172.16.253.1, default port 3080). GNS should be able to connect to the remote server.
 
     ![GNS3 server settings](images/gns3_server_settings.png)
 
@@ -219,3 +219,7 @@ openvpn_profile_endpoint_creds = {
 | google\_compute\_instance\_id | ID of the created Google Compute Instance. |
 | openvpn\_profile\_endpoint | Endpoint to download the OpenVPN profile from. |
 | public\_ip | Public IP address of the created instance. |
+
+## License
+
+MIT licensed. See [LICENSE.md](LICENSE.md) for full details.
