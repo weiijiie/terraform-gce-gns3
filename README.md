@@ -82,8 +82,9 @@ Since this module is mainly geared towards development and training purposes, it
       # of GNS3 image and project files
       gns3_disk_size = 20
   
-      # I publish the latest 4 versions of the GNS3 server as pre-built base images
-      # for convenience, for long-term stability it is recommended to build your own
+      # GNS requires that the server version matches the client version, thus I
+      # publish the latest 4 versions of the GNS3 server as pre-built base images
+      # for convenience. For long-term stability it is recommended to build your own
       # base images using the provided Packer files
       image_family  = "gns3-server-v2-2-15"
       image_project = "civic-circuit-287709" # Project containing the image
