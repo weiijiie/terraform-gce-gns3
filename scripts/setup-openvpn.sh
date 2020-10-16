@@ -190,6 +190,12 @@ server {
     location / {
       auth_basic "Restricted Content";
       auth_basic_user_file /etc/nginx/.htpasswd;
+
+      add_header Last-Modified \$date_gmt;
+      add_header Cache-Control 'no-store, no-cache';
+      if_modified_since off;
+      expires off;
+      etag off;
     }
 }
 EOF
@@ -199,6 +205,14 @@ EOF
 server {
   listen ${OPENVPN_PROFILE_ENDPOINT_PORT};
     root /usr/share/nginx/openvpn;
+
+    location / {
+      add_header Last-Modified \$date_gmt;
+      add_header Cache-Control 'no-store, no-cache';
+      if_modified_since off;
+      expires off;
+      etag off;
+    }
 }
 EOF
   fi
