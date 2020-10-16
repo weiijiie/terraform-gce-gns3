@@ -74,9 +74,10 @@ Since this module is mainly geared towards development and training purposes, it
     module "gns3_server" {
       source = "github.com/weiijiie/terraform-gce-gns3?ref=v0.1.0"
   
-      # Selected machine type, either the E2 or N2 high-CPU machine types
-      # are recommended, with 4-8 virtual CPUs based on workload requirements
-      machine_type = "e2-highcpu-8"
+      # Selected machine type, the N2 high-CPU machine types are recommended, as
+      # they support nested virtualization. Select number of virtual CPUs based 
+      # on your workload requirements
+      machine_type = "n2-highcpu-8"
   
       # Disk size in GB for persistent disk. Adjust according to size requirements
       # of GNS3 image and project files
@@ -151,7 +152,7 @@ To build the base images using Packer:
 
 ### Costs
 
-The costs of running the GNS3 server depends on the machine type of the Google Compute instance, but if using E2/N2 high-CPU types with 4-8 vCPUs, the price is generally under $0.50 USD per hour (these types are recommended solely based on empirical observation, there may be better machine types more suited to running your workloads). In addition, the persistent disk used to store the GNS3 files may incur a small monthly cost, depending on how large the files are.
+The costs of running the GNS3 server depends on the machine type of the Google Compute instance, but if using N2 high-CPU types with 4-8 vCPUs, the price is generally under $0.50 USD per hour (these types are recommended solely based on empirical observation, there may be better machine types more suited to running your workloads). In addition, the persistent disk used to store the GNS3 files may incur a small monthly cost, depending on how large the files are.
 
 ### Shutting down the instance
 
