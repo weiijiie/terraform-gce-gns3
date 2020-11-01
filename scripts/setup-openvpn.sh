@@ -98,7 +98,7 @@ EOF
       -CA /etc/openvpn/ca.crt \
       -CAkey /etc/openvpn/ca.key \
       -CAcreateserial \
-      -extfile <(printf "keyUsage=digitalSignature,keyEncipherment,keyAgreement\n\
+      -extfile <(printf "keyUsage=digitalSignature,keyEncipherment,keyAgreement,nonRepudiation\n\
                          extendedKeyUsage=serverAuth,clientAuth") \
       -days 24855
   fi
